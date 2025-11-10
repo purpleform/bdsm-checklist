@@ -27,6 +27,34 @@
             border-radius: 15px;
             padding: 30px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .watermark {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            user-select: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .watermark-text {
+            position: absolute;
+            font-size: 48px;
+            font-weight: bold;
+            color: rgba(102, 126, 234, 0.1);
+            white-space: nowrap;
+            transform: rotate(-45deg);
+            letter-spacing: 8px;
+        }
+
+        .content {
+            position: relative;
+            z-index: 2;
         }
 
         .header {
@@ -36,6 +64,8 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 10px;
             color: white;
+            position: relative;
+            z-index: 2;
         }
 
         .header h1 {
@@ -148,6 +178,8 @@
             display: flex;
             gap: 15px;
             justify-content: center;
+            position: relative;
+            z-index: 2;
         }
 
         button {
@@ -177,6 +209,58 @@
 
         .reset-btn:hover {
             background: #d1d5db;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding: 25px;
+            background: #f9fafb;
+            border-radius: 10px;
+            text-align: center;
+            color: #6b7280;
+            line-height: 1.8;
+            font-size: 14px;
+            border: 1px solid #e5e7eb;
+            position: relative;
+            z-index: 2;
+        }
+
+        .footer p {
+            margin: 8px 0;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .footer a:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+
+        .lang-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 20px;
+            padding: 8px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            color: #667eea;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .lang-toggle:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
         @media (max-width: 1400px) {
@@ -249,6 +333,11 @@
             .category-title {
                 font-size: 20px;
             }
+
+            .watermark-text {
+                font-size: 40px;
+                letter-spacing: 10px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -261,6 +350,11 @@
                 height: 32px;
                 font-size: 12px;
             }
+
+            .watermark-text {
+                font-size: 30px;
+                letter-spacing: 5px;
+            }
         }
 
         @media (max-width: 380px) {
@@ -268,6 +362,11 @@
                 width: 28px;
                 height: 28px;
                 font-size: 11px;
+            }
+
+            .watermark-text {
+                font-size: 25px;
+                letter-spacing: 3px;
             }
         }
 
@@ -285,6 +384,26 @@
 
             .actions {
                 display: none;
+            }
+
+            .lang-toggle {
+                display: none;
+            }
+
+            .watermark {
+                display: block !important;
+            }
+
+            .watermark-text {
+                font-size: 50px;
+                letter-spacing: 12px;
+                color: rgba(102, 126, 234, 0.08);
+            }
+
+            .footer {
+                display: block !important;
+                margin-top: 20px;
+                page-break-inside: avoid;
             }
 
             .content {
@@ -333,18 +452,20 @@
     </style>
 </head>
 <body>
+    <button class="lang-toggle" onclick="toggleLanguage()">简体中文</button>
     <div class="container">
+        <div class="watermark" id="watermark-container"></div>
         <div class="header">
-            <h1>BDSM項目喜好紫評表 v1.7</h1>
+            <h1 data-zh-tw="BDSM項目喜好紫評表 v1.7" data-zh-cn="BDSM项目喜好紫评表 v1.7">BDSM項目喜好紫評表 v1.7</h1>
             <div class="legend">
-                <div class="legend-item">4 - 最喜歡</div>
-                <div class="legend-item">3 - 喜歡</div>
-                <div class="legend-item">2 - 接受</div>
-                <div class="legend-item">1 - 可以試試</div>
-                <div class="legend-item">0 - 沒試過</div>
-                <div class="legend-item">-1 - 軟性界限</div>
-                <div class="legend-item">-2 - 硬性界限</div>
-                <div class="legend-item">-3 - 極限界限</div>
+                <div class="legend-item" data-zh-tw="4 - 最喜歡" data-zh-cn="4 - 最喜欢">4 - 最喜歡</div>
+                <div class="legend-item" data-zh-tw="3 - 喜歡" data-zh-cn="3 - 喜欢">3 - 喜歡</div>
+                <div class="legend-item" data-zh-tw="2 - 接受" data-zh-cn="2 - 接受">2 - 接受</div>
+                <div class="legend-item" data-zh-tw="1 - 可以試試" data-zh-cn="1 - 可以试试">1 - 可以試試</div>
+                <div class="legend-item" data-zh-tw="0 - 沒試過" data-zh-cn="0 - 没试过">0 - 沒試過</div>
+                <div class="legend-item" data-zh-tw="-1 - 軟性界限" data-zh-cn="-1 - 软性界限">-1 - 軟性界限</div>
+                <div class="legend-item" data-zh-tw="-2 - 硬性界限" data-zh-cn="-2 - 硬性界限">-2 - 硬性界限</div>
+                <div class="legend-item" data-zh-tw="-3 - 極限界限" data-zh-cn="-3 - 极限界限">-3 - 極限界限</div>
             </div>
         </div>
 
@@ -417,15 +538,58 @@
         </div>
 
         <div class="actions">
-            <button class="export-btn" onclick="exportPDF()">匯出PDF</button>
-            <button class="export-btn" onclick="exportScreenshot()">匯出截圖</button>
-            <button class="reset-btn" onclick="resetAll()">重置所有</button>
+            <button class="export-btn" onclick="exportPDF()" data-zh-tw="匯出PDF" data-zh-cn="导出PDF">匯出PDF</button>
+            <button class="export-btn" onclick="exportScreenshot()" data-zh-tw="匯出截圖" data-zh-cn="导出截图">匯出截圖</button>
+            <button class="reset-btn" onclick="resetAll()" data-zh-tw="重置所有" data-zh-cn="重置所有">重置所有</button>
+        </div>
+
+        <div class="footer">
+            <p data-zh-tw="此表格由《簡稱樂園》BDSM群內成員合作協力製作而成的不完全項目總匯，刻意避開了一些涉及傷害自己或他人的性偏離項目。" data-zh-cn="此表格由《简称乐园》BDSM群内成员合作协力制作而成的不完全项目总汇，刻意避开了一些涉及伤害自己或他人的性偏离项目。">此表格由《簡稱樂園》BDSM群內成員合作協力製作而成的不完全項目總匯，刻意避開了一些涉及傷害自己或他人的性偏離項目。</p>
+            <p data-zh-tw="請勿擦掉浮水印複製貼上修改後另行發布。如果你花錢購買了此物，恭喜你被騙了！" data-zh-cn="请勿擦掉水印复制粘贴修改后另行发布。如果你花钱购买了此物，恭喜你被骗了！">請勿擦掉浮水印複製貼上修改後另行發布。如果你花錢購買了此物，恭喜你被騙了！</p>
+            <p data-zh-tw="如果被你從別處看到的，哎喲挺有緣的。" data-zh-cn="如果被你从别处看到的，哎哟挺有缘的。">如果被你從別處看到的，哎喲挺有緣的。</p>
+            <p><span data-zh-tw="我們的推特" data-zh-cn="我们的推特">我們的推特</span> <a href="https://twitter.com/CF_IS_HERE" target="_blank">@CF_IS_HERE</a></p>
         </div>
     </div>
 
     <script>
+        let currentLang = 'zh-tw';
+
+        // 生成重複浮水印
+        function generateWatermarks() {
+            const container = document.getElementById('watermark-container');
+            container.innerHTML = '';
+
+            const watermarkText = currentLang === 'zh-tw' ? '簡稱樂園 @CF_IS_HERE' : '简称乐园 @CF_IS_HERE';
+            const spacingY = 150; // 垂直間距
+            const spacingX = 500; // 水平間距
+
+            // 計算需要多少行和列
+            const containerHeight = document.querySelector('.container').scrollHeight;
+            const containerWidth = document.querySelector('.container').scrollWidth;
+
+            // 因為旋轉45度，需要更多的覆蓋範圍
+            const rows = Math.ceil(containerHeight / spacingY) + 6;
+            const cols = Math.ceil(containerWidth / spacingX) + 6;
+
+            for (let row = -3; row < rows; row++) {
+                for (let col = -3; col < cols; col++) {
+                    const span = document.createElement('span');
+                    span.className = 'watermark-text';
+                    span.textContent = watermarkText;
+
+                    // 交錯排列：奇數行向右偏移半個間距
+                    const offsetX = (row % 2 === 0) ? 0 : spacingX / 2;
+
+                    span.style.top = (row * spacingY) + 'px';
+                    span.style.left = (col * spacingX + offsetX) + 'px';
+                    container.appendChild(span);
+                }
+            }
+        }
+
         const items = {
-            sex: [
+            'zh-tw': {
+                sex: [
                 '用手幫主人自慰', '口爆', '口交', '吞精', '顏射', '肛交',
                 '陰道內射', '肛門內射', '潮吹失禁', '情趣用品折磨',
                 '強制連續高潮', '公共場所做愛', '主人面前侍奉其他人',
@@ -481,6 +645,92 @@
             others: [
                 '多主/奴調教', 'ATM', '紫評表'
             ]
+                },
+            'zh-cn': {
+                sex: [
+                '用手帮主人自慰', '口爆', '口交', '吞精', '颜射', '肛交',
+                '阴道内射', '肛门内射', '潮吹失禁', '情趣用品折磨',
+                '强制连续高潮', '公共场所做爱', '主人面前侍奉其他人',
+                '主人不在时侍奉其他人', '强奸', '轮奸', '多处被插入',
+                '同性多人性行为', '异性多人性行为', '4P以上', '多奴/多主侍奉',
+                '第四爱', '乱伦'
+            ],
+            pet: [
+                '摸头', '恋物', '尾巴穿戴', '爬行', '项圈', '喂食',
+                '叼食物', '闻气味', '学叫声', '踩踏', '户外暴露',
+                '户外调教', '户外裸体', '户外流放', '骑乘', '囚笼关押',
+                '圈养'
+            ],
+            bondage: [
+                '剥夺听觉', '剥夺视觉', '禁言', '禁欲', '高潮后强制刺激',
+                '绳艺', '拘束衣', '色情性拒绝（TD）', '贞操带', '思维控制',
+                '憋尿', '空吊/倒挂', '强制排泄', '监禁（多日）'
+            ],
+            creature: [
+                '触手/外星人（Cosplay）', '生物塞入', '兽交', '群兽轮交',
+                '人兽同交', '昆虫爬身'
+            ],
+            'body-mod': [
+                '阴道扩张', '尿道扩张', '肛门扩张', '刺青', '催乳', '尿道刺激',
+                '穿刺', '穿环', '疤痕', '烙印', '拳交', '药物（激素）'
+            ],
+            toys: [
+                '角色扮演', '制服诱惑', '挑选/训练奴隶', '模特/人偶装扮',
+                '作为女仆（伺候）', '作为家居', '放置', '租赁/交易'
+            ],
+            humiliation: [
+                '远端指令', '不穿内衣', '羞耻视频照片拍摄', '窥阴癖',
+                '剃毛', '舔足', '视觉性骚扰', '言语管教',
+                '言语羞辱（自身）', '淫妻/淫夫癖', '自慰展示', '女体盛',
+                '内视镜研究', '分享羞耻视频照片', '出轨绿帽', '异性装',
+                '网络公调', '露出（朋友）', '露出（生人）', '公共场所暴露',
+                '公共场所调教', '公开场合项圈', '公开场合捆绑（衣内）',
+                '公开场合器具（衣内）', '言语羞辱（亲人）'
+            ],
+            torture: [
+                '搔痒', '轻咬', '打屁股', '身上写字', '滴蜡',
+                '打耳光', '拉扯头发', '鞭子', '板拍', '鼻钩',
+                '走绳', '冰刑', '坐脸', '舔肛', '虐乳',
+                '体罚', '水刑', '火刑', '三角木马', '灌肠',
+                '虐阴/阳', '异物涂抹', '异物灌/塞入（阴道）', '异物灌/塞入（膀胱）',
+                '异物灌/塞入（肛门）', '皮肤磨损', '踢踹', '性窒息',
+                '电击'
+            ],
+            fluids: [
+                '唾液', '汗水', '饮尿', '饮经血', '尿浴', '粪浴',
+                '食粪'
+            ],
+            others: [
+                '多主/奴调教', 'ATM', '紫评表'
+            ]
+            }
+        };
+
+        const categoryNames = {
+            'zh-tw': {
+                sex: '性愛',
+                pet: '寵物',
+                bondage: '拘束',
+                creature: '生物',
+                'body-mod': '身體改造',
+                toys: '性玩具',
+                humiliation: '羞辱',
+                torture: '刑訊',
+                fluids: '體液',
+                others: '其他'
+            },
+            'zh-cn': {
+                sex: '性爱',
+                pet: '宠物',
+                bondage: '拘束',
+                creature: '生物',
+                'body-mod': '身体改造',
+                toys: '性玩具',
+                humiliation: '羞辱',
+                torture: '刑讯',
+                fluids: '体液',
+                others: '其他'
+            }
         };
 
         function createRatingButtons(categoryId, itemName, index) {
@@ -498,10 +748,12 @@
         }
 
         function initializeItems() {
-            Object.keys(items).forEach(categoryId => {
+            const currentItems = items[currentLang];
+            Object.keys(currentItems).forEach(categoryId => {
                 const container = document.getElementById(categoryId);
                 if (container) {
-                    items[categoryId].forEach((itemName, index) => {
+                    container.innerHTML = ''; // 清空現有內容
+                    currentItems[categoryId].forEach((itemName, index) => {
                         const itemHtml = `
                             <div class="item">
                                 <div class="item-name">${itemName}</div>
@@ -512,14 +764,47 @@
                     });
                 }
             });
+
+            // 更新分類標題
+            Object.keys(categoryNames[currentLang]).forEach(categoryId => {
+                const titleElement = document.querySelector(`#${categoryId}`).previousElementSibling;
+                if (titleElement && titleElement.classList.contains('category-title')) {
+                    titleElement.textContent = categoryNames[currentLang][categoryId];
+                }
+            });
+        }
+
+        function toggleLanguage() {
+            const langButton = document.querySelector('.lang-toggle');
+
+            if (currentLang === 'zh-tw') {
+                currentLang = 'zh-cn';
+                langButton.textContent = '繁體中文';
+            } else {
+                currentLang = 'zh-tw';
+                langButton.textContent = '简体中文';
+            }
+
+            // 更新所有帶有語言屬性的元素
+            document.querySelectorAll('[data-zh-tw]').forEach(element => {
+                element.textContent = element.getAttribute(`data-${currentLang}`);
+            });
+
+            // 重新載入項目
+            initializeItems();
+
+            // 重新生成浮水印
+            generateWatermarks();
         }
 
         function exportPDF() {
             const container = document.querySelector('.container');
             const actionsDiv = document.querySelector('.actions');
+            const langToggle = document.querySelector('.lang-toggle');
 
             // 暫時隱藏按鈕
             actionsDiv.style.display = 'none';
+            langToggle.style.display = 'none';
 
             html2canvas(container, {
                 scale: 2,
@@ -530,6 +815,7 @@
             }).then(canvas => {
                 // 恢復按鈕顯示
                 actionsDiv.style.display = 'flex';
+                langToggle.style.display = 'block';
 
                 const { jsPDF } = window.jspdf;
                 const imgData = canvas.toDataURL('image/png');
@@ -552,20 +838,25 @@
 
                 // 將整張圖片放入PDF，不分頁
                 pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                pdf.save('BDSM項目喜好紫評表.pdf');
+                const filename = currentLang === 'zh-tw' ? 'BDSM項目喜好紫評表.pdf' : 'BDSM项目喜好紫评表.pdf';
+                pdf.save(filename);
             }).catch(error => {
                 actionsDiv.style.display = 'flex';
+                langToggle.style.display = 'block';
                 console.error('PDF導出失敗:', error);
-                alert('PDF導出失敗，請重試');
+                const errorMsg = currentLang === 'zh-tw' ? 'PDF導出失敗，請重試' : 'PDF导出失败，请重试';
+                alert(errorMsg);
             });
         }
 
         function exportScreenshot() {
             const container = document.querySelector('.container');
             const actionsDiv = document.querySelector('.actions');
+            const langToggle = document.querySelector('.lang-toggle');
 
             // 暫時隱藏按鈕
             actionsDiv.style.display = 'none';
+            langToggle.style.display = 'none';
 
             html2canvas(container, {
                 scale: 2,
@@ -575,25 +866,30 @@
             }).then(canvas => {
                 // 恢復按鈕顯示
                 actionsDiv.style.display = 'flex';
+                langToggle.style.display = 'block';
 
                 // 將canvas轉換為圖片並下載
                 canvas.toBlob(blob => {
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement('a');
                     link.href = url;
-                    link.download = 'BDSM喜好紫評表.png';
+                    const filename = currentLang === 'zh-tw' ? 'BDSM喜好紫評表.png' : 'BDSM喜好紫评表.png';
+                    link.download = filename;
                     link.click();
                     URL.revokeObjectURL(url);
                 });
             }).catch(error => {
                 actionsDiv.style.display = 'flex';
+                langToggle.style.display = 'block';
                 console.error('截圖失敗:', error);
-                alert('截圖失敗，請重試');
+                const errorMsg = currentLang === 'zh-tw' ? '截圖失敗，請重試' : '截图失败，请重试';
+                alert(errorMsg);
             });
         }
 
         function resetAll() {
-            if (confirm('確定要重置所有評分嗎？')) {
+            const confirmMsg = currentLang === 'zh-tw' ? '確定要重置所有評分嗎？' : '确定要重置所有评分吗？';
+            if (confirm(confirmMsg)) {
                 document.querySelectorAll('input[type="radio"]').forEach(radio => {
                     radio.checked = false;
                 });
@@ -601,7 +897,13 @@
         }
 
         // 頁面載入時初始化
-        window.addEventListener('DOMContentLoaded', initializeItems);
+        window.addEventListener('DOMContentLoaded', function() {
+            initializeItems();
+            generateWatermarks();
+        });
+
+        // 窗口大小改變時重新生成浮水印
+        window.addEventListener('resize', generateWatermarks);
     </script>
 </body>
 </html>
