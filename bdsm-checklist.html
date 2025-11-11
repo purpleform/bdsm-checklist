@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>https://purpleform.github.io/bdsm-checklist/bdsm-checklist.html v1.7</title>
+    <title>https://purpleform.github.io/bdsm-checklist/bdsm-checklist.html v1.7 (緊湊版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
@@ -91,6 +91,12 @@
             gap: 30px;
         }
 
+        .column-left,
+        .column-right {
+            min-width: 0;
+            overflow: hidden;
+        }
+
         .category {
             margin-bottom: 25px;
         }
@@ -104,6 +110,8 @@
             border-radius: 8px;
             margin-bottom: 15px;
             text-align: center;
+            box-sizing: border-box;
+            width: 100%;
         }
 
         .item {
@@ -157,6 +165,38 @@
             transform: scale(1.1);
         }
 
+        /* 緊湊模式樣式 - 用於 PDF 匯出 */
+        .compact-mode .item {
+            flex-direction: row !important;
+            align-items: center !important;
+            padding: 8px 10px !important;
+            gap: 10px !important;
+        }
+
+        .compact-mode .item-name {
+            margin-bottom: 0 !important;
+            font-size: 14px !important;
+        }
+
+        .compact-mode .rating {
+            width: auto !important;
+            gap: 0 !important;
+        }
+
+        .compact-mode .rating label {
+            display: none !important;
+        }
+
+        .compact-mode .rating input[type="radio"]:checked + label {
+            display: inline-flex !important;
+            width: auto !important;
+            min-width: 32px !important;
+            height: 28px !important;
+            padding: 0 8px !important;
+            font-size: 13px !important;
+            font-weight: bold !important;
+        }
+
         .rating input[type="radio"]:checked + label {
             border-width: 3px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
@@ -183,7 +223,10 @@
         }
 
         button {
-            padding: 15px 40px;
+            flex: 1 1 0;
+            min-width: 0;
+            max-width: 200px;
+            padding: 15px 20px;
             font-size: 16px;
             font-weight: bold;
             border: none;
@@ -332,6 +375,7 @@
 
             .category-title {
                 font-size: 20px;
+                padding: 10px 15px;
             }
 
             .watermark-text {
@@ -351,6 +395,11 @@
                 font-size: 12px;
             }
 
+            .category-title {
+                font-size: 18px;
+                padding: 8px 12px;
+            }
+
             .watermark-text {
                 font-size: 30px;
                 letter-spacing: 5px;
@@ -362,6 +411,11 @@
                 width: 28px;
                 height: 28px;
                 font-size: 11px;
+            }
+
+            .category-title {
+                font-size: 16px;
+                padding: 6px 8px;
             }
 
             .watermark-text {
@@ -552,6 +606,7 @@
                 <span data-zh-tw="BDSM項目搜集：CiCi ｜ 紫評表製作：長風 ｜ 網頁版製作：六六" data-zh-cn="BDSM项目搜集：CiCi ｜ 紫评表制作：长风 ｜ 网页版制作：六六">BDSM項目搜集：CiCi ｜ 紫評表製作：長風 ｜ 網頁版製作：六六</span>
             </p>
             <p><span data-zh-tw="我們的推特" data-zh-cn="我们的推特">我們的推特</span> <a href="https://twitter.com/CF_IS_HERE" target="_blank">@CF_IS_HERE</a></p>
+            <p><span data-zh-tw="樂園官網" data-zh-cn="乐园官网">樂園官網</span> <a href="https://leyuan.xyz" target="_blank">https://leyuan.xyz</a></p>
         </div>
     </div>
 
@@ -801,7 +856,32 @@
             generateWatermarks();
         }
 
-        function exportPDF() {
+        async function exportPDF() {
+            // 檢查是否所有項目都已填寫
+            const allItems = document.querySelectorAll('.item');
+            const unfilledItems = [];
+
+            allItems.forEach(item => {
+                const itemName = item.querySelector('.item-name').textContent.trim();
+                const radios = item.querySelectorAll('input[type="radio"]');
+                const isChecked = Array.from(radios).some(radio => radio.checked);
+
+                if (!isChecked) {
+                    unfilledItems.push(itemName);
+                }
+            });
+
+            // 如果有未填寫的項目，詢問使用者是否繼續
+            if (unfilledItems.length > 0) {
+                const confirmMsg = currentLang === 'zh-tw'
+                    ? `還有 ${unfilledItems.length} 個項目未填寫，是否繼續匯出？\n\n未填寫的項目將不會顯示在緊湊版 PDF 中。`
+                    : `还有 ${unfilledItems.length} 个项目未填写，是否继续导出？\n\n未填写的项目将不会显示在紧凑版 PDF 中。`;
+
+                if (!confirm(confirmMsg)) {
+                    return; // 使用者選擇取消
+                }
+            }
+
             const container = document.querySelector('.container');
             const actionsDiv = document.querySelector('.actions');
             const langToggle = document.querySelector('.lang-toggle');
@@ -810,85 +890,284 @@
             actionsDiv.style.display = 'none';
             langToggle.style.display = 'none';
 
-            html2canvas(container, {
-                scale: 2,
-                backgroundColor: '#ffffff',
-                logging: false,
-                useCORS: true,
-                windowHeight: container.scrollHeight
-            }).then(canvas => {
-                // 恢復按鈕顯示
-                actionsDiv.style.display = 'flex';
-                langToggle.style.display = 'block';
+            // 保存原始樣式
+            const contentDiv = document.querySelector('.content');
+            const originalStyles = {
+                bodyOverflow: document.body.style.overflow,
+                containerWidth: container.style.width,
+                containerMaxWidth: container.style.maxWidth,
+                containerHeight: container.style.height,
+                containerMaxHeight: container.style.maxHeight,
+                containerPadding: container.style.padding,
+                contentGap: contentDiv.style.gap
+            };
+
+            try {
+                document.body.style.overflow = 'visible';
+                container.style.height = 'auto';
+                container.style.maxHeight = 'none';
+
+                // 啟用緊湊模式 - 只顯示已選的分數
+                container.classList.add('compact-mode');
+
+                // 先用 A4 寬度試算（並強制兩欄）
+                const a4WidthPx = 794;
+                container.style.width = a4WidthPx + 'px';
+                container.style.maxWidth = a4WidthPx + 'px';
+                container.style.padding = '30px 20px';
+
+                // 強制兩欄布局（確保 Grid 生效）
+                contentDiv.style.display = 'grid';
+                contentDiv.style.gridTemplateColumns = '1fr 1fr';
+                contentDiv.style.gap = '20px';
+
+                await new Promise(resolve => setTimeout(resolve, 200));
+
+                let actualHeight = Math.max(
+                    container.scrollHeight,
+                    container.offsetHeight,
+                    container.clientHeight
+                );
+
+                // 計算 A4 寬度時的 PDF 高度
+                const a4PdfHeight = (actualHeight * 210) / a4WidthPx;
+
+                console.log('試算 A4 寬度 PDF 高度:', a4PdfHeight.toFixed(2), 'mm');
+
+                let targetWidth = a4WidthPx;
+
+                // 如果超過 14400mm 限制，改用原始寬度
+                if (a4PdfHeight > 14400) {
+                    console.log('超過限制，改用原始寬度');
+
+                    // 恢復原始寬度和樣式
+                    container.style.width = originalStyles.containerWidth;
+                    container.style.maxWidth = originalStyles.containerMaxWidth;
+                    container.style.padding = originalStyles.containerPadding;
+                    contentDiv.style.display = '';
+                    contentDiv.style.gridTemplateColumns = '';
+                    contentDiv.style.gap = originalStyles.contentGap;
+
+                    await new Promise(resolve => setTimeout(resolve, 200));
+
+                    actualHeight = Math.max(
+                        container.scrollHeight,
+                        container.offsetHeight,
+                        container.clientHeight
+                    );
+
+                    targetWidth = container.scrollWidth;
+                    console.log('使用原始寬度:', targetWidth, 'px');
+                }
+
+                console.log('最終 Container 尺寸:', targetWidth, 'x', actualHeight, 'px');
+
+                const canvas = await html2canvas(container, {
+                    scale: 2,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    useCORS: true,
+                    allowTaint: true,
+                    windowHeight: actualHeight,
+                    height: actualHeight,
+                    width: targetWidth,
+                    scrollY: -window.scrollY,
+                    scrollX: -window.scrollX
+                });
+
+                console.log('Canvas size:', canvas.width, 'x', canvas.height);
 
                 const { jsPDF } = window.jspdf;
-                const imgData = canvas.toDataURL('image/png');
+                const imgData = canvas.toDataURL('image/png', 1.0);
 
-                // 計算PDF尺寸 - 使用圖片的寬高比
+                // 計算PDF尺寸
                 const imgWidth = canvas.width;
                 const imgHeight = canvas.height;
-
-                // 設定PDF尺寸以完整包含圖片
-                // 使用mm為單位，A4寬度210mm
                 const pdfWidth = 210;
-                const pdfHeight = (imgHeight * pdfWidth) / imgWidth;
+                const ratio = pdfWidth / imgWidth;
+                const pdfHeight = imgHeight * ratio;
+
+                console.log('最終 PDF 尺寸:', pdfWidth, 'x', pdfHeight.toFixed(2), 'mm');
 
                 // 創建自定義尺寸的PDF
                 const pdf = new jsPDF({
-                    orientation: pdfHeight > pdfWidth ? 'portrait' : 'landscape',
+                    orientation: 'portrait',
                     unit: 'mm',
                     format: [pdfWidth, pdfHeight]
                 });
 
-                // 將整張圖片放入PDF，不分頁
+                // 將整張圖片放入PDF
                 pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
                 const filename = currentLang === 'zh-tw' ? 'BDSM項目喜好紫評表.pdf' : 'BDSM项目喜好紫评表.pdf';
-                pdf.save(filename);
-            }).catch(error => {
-                actionsDiv.style.display = 'flex';
-                langToggle.style.display = 'block';
+
+                // 使用 Blob URL 和 <a> 標籤下載，相容所有瀏覽器包括 iOS Safari
+                const pdfBlob = pdf.output('blob');
+                const blobUrl = URL.createObjectURL(pdfBlob);
+
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = filename;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                // 延遲釋放 URL 避免下載失敗
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+
+                console.log('PDF export completed');
+            } catch (error) {
                 console.error('PDF導出失敗:', error);
                 const errorMsg = currentLang === 'zh-tw' ? 'PDF導出失敗，請重試' : 'PDF导出失败，请重试';
                 alert(errorMsg);
-            });
+            } finally {
+                // 移除緊湊模式
+                container.classList.remove('compact-mode');
+
+                // 恢復所有原始樣式
+                document.body.style.overflow = originalStyles.bodyOverflow;
+                container.style.width = originalStyles.containerWidth;
+                container.style.maxWidth = originalStyles.containerMaxWidth;
+                container.style.height = originalStyles.containerHeight;
+                container.style.maxHeight = originalStyles.containerMaxHeight;
+                container.style.padding = originalStyles.containerPadding;
+                contentDiv.style.display = '';
+                contentDiv.style.gridTemplateColumns = '';
+                contentDiv.style.gap = originalStyles.contentGap;
+                actionsDiv.style.display = 'flex';
+                langToggle.style.display = 'block';
+            }
         }
 
-        function exportScreenshot() {
+        async function exportScreenshot() {
+            // 檢查是否所有項目都已填寫
+            const allItems = document.querySelectorAll('.item');
+            const unfilledItems = [];
+
+            allItems.forEach(item => {
+                const itemName = item.querySelector('.item-name').textContent.trim();
+                const radios = item.querySelectorAll('input[type="radio"]');
+                const isChecked = Array.from(radios).some(radio => radio.checked);
+
+                if (!isChecked) {
+                    unfilledItems.push(itemName);
+                }
+            });
+
+            // 如果有未填寫的項目，詢問使用者是否繼續
+            if (unfilledItems.length > 0) {
+                const confirmMsg = currentLang === 'zh-tw'
+                    ? `還有 ${unfilledItems.length} 個項目未填寫，是否繼續匯出？\n\n未填寫的項目將不會顯示在緊湊版 PNG 中。`
+                    : `还有 ${unfilledItems.length} 个项目未填写，是否继续导出？\n\n未填写的项目将不会显示在紧凑版 PNG 中。`;
+
+                if (!confirm(confirmMsg)) {
+                    return; // 使用者選擇取消
+                }
+            }
+
             const container = document.querySelector('.container');
             const actionsDiv = document.querySelector('.actions');
             const langToggle = document.querySelector('.lang-toggle');
+            const contentDiv = document.querySelector('.content');
 
-            // 暫時隱藏按鈕
-            actionsDiv.style.display = 'none';
-            langToggle.style.display = 'none';
+            // 保存原始樣式
+            const originalStyles = {
+                bodyOverflow: document.body.style.overflow,
+                containerWidth: container.style.width,
+                containerMaxWidth: container.style.maxWidth,
+                containerHeight: container.style.height,
+                containerMaxHeight: container.style.maxHeight,
+                containerPadding: container.style.padding,
+                contentGap: contentDiv.style.gap
+            };
 
-            html2canvas(container, {
-                scale: 2,
-                backgroundColor: '#ffffff',
-                logging: false,
-                useCORS: true
-            }).then(canvas => {
-                // 恢復按鈕顯示
-                actionsDiv.style.display = 'flex';
-                langToggle.style.display = 'block';
+            try {
+                // 隱藏按鈕
+                actionsDiv.style.display = 'none';
+                langToggle.style.display = 'none';
 
-                // 將canvas轉換為圖片並下載
+                // 啟用緊湊模式
+                container.classList.add('compact-mode');
+
+                document.body.style.overflow = 'visible';
+                container.style.height = 'auto';
+                container.style.maxHeight = 'none';
+
+                // 使用 A4 寬度以獲得更緊湊的佈局
+                const a4WidthPx = 794;
+                container.style.width = a4WidthPx + 'px';
+                container.style.maxWidth = a4WidthPx + 'px';
+                container.style.padding = '30px 20px';
+
+                // 強制兩欄 Grid 佈局
+                contentDiv.style.display = 'grid';
+                contentDiv.style.gridTemplateColumns = '1fr 1fr';
+                contentDiv.style.gap = '20px';
+
+                // 等待瀏覽器重新渲染
+                await new Promise(resolve => setTimeout(resolve, 200));
+
+                const actualHeight = Math.max(
+                    container.scrollHeight,
+                    container.offsetHeight,
+                    container.clientHeight
+                );
+
+                console.log('PNG 匯出 (緊湊模式) - Container height:', actualHeight);
+
+                const canvas = await html2canvas(container, {
+                    scale: 3,  // 使用更高的解析度
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    useCORS: true,
+                    allowTaint: true,
+                    windowHeight: actualHeight,
+                    height: actualHeight,
+                    width: a4WidthPx,
+                    scrollY: -window.scrollY,
+                    scrollX: -window.scrollX
+                });
+
+                console.log('PNG Canvas size:', canvas.width, 'x', canvas.height);
+
+                // 將 canvas 轉換為圖片並下載
                 canvas.toBlob(blob => {
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement('a');
                     link.href = url;
                     const filename = currentLang === 'zh-tw' ? 'BDSM喜好紫評表.png' : 'BDSM喜好紫评表.png';
                     link.download = filename;
+                    link.style.display = 'none';
+                    document.body.appendChild(link);
                     link.click();
-                    URL.revokeObjectURL(url);
-                });
-            }).catch(error => {
-                actionsDiv.style.display = 'flex';
-                langToggle.style.display = 'block';
+                    document.body.removeChild(link);
+
+                    setTimeout(() => URL.revokeObjectURL(url), 100);
+                }, 'image/png', 1.0);
+
+                console.log('PNG export completed');
+            } catch (error) {
                 console.error('截圖失敗:', error);
                 const errorMsg = currentLang === 'zh-tw' ? '截圖失敗，請重試' : '截图失败，请重试';
                 alert(errorMsg);
-            });
+            } finally {
+                // 移除緊湊模式
+                container.classList.remove('compact-mode');
+
+                // 恢復所有原始樣式
+                document.body.style.overflow = originalStyles.bodyOverflow;
+                container.style.width = originalStyles.containerWidth;
+                container.style.maxWidth = originalStyles.containerMaxWidth;
+                container.style.height = originalStyles.containerHeight;
+                container.style.maxHeight = originalStyles.containerMaxHeight;
+                container.style.padding = originalStyles.containerPadding;
+                contentDiv.style.display = '';
+                contentDiv.style.gridTemplateColumns = '';
+                contentDiv.style.gap = originalStyles.contentGap;
+                actionsDiv.style.display = 'flex';
+                langToggle.style.display = 'block';
+            }
         }
 
         function resetAll() {
