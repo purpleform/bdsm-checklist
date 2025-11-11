@@ -1237,21 +1237,80 @@
                 ratings: ratings
             };
 
-            // 下載 JSON 檔案
-            const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
+            // 下載 JSON 檔案（跨平台相容版本）
+            const jsonString = JSON.stringify(jsonData, null, 2);
             const filename = currentLang === 'zh-tw' ? 'BDSM紫評表資料.json' : 'BDSM紫评表数据.json';
-            link.download = filename;
-            link.style.display = 'none';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            setTimeout(() => URL.revokeObjectURL(url), 100);
 
-            const successMsg = currentLang === 'zh-tw' ? 'JSON 資料已匯出！' : 'JSON 数据已导出！';
-            alert(successMsg);
+            // 檢測是否為 iOS/移動裝置
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+            // 嘗試使用標準下載方式
+            try {
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = filename;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                // 延遲檢查下載是否成功
+                setTimeout(() => {
+                    URL.revokeObjectURL(url);
+
+                    // 如果是移動裝置，給予額外提示
+                    if (isMobile) {
+                        const mobileMsg = currentLang === 'zh-tw'
+                            ? 'JSON 已匯出！\n\n如果下載沒有開始：\n• iOS：請用 Safari 瀏覽器開啟\n• App 內瀏覽器：請點右上角「在瀏覽器中開啟」\n• 或將 JSON 內容複製備份'
+                            : 'JSON 已导出！\n\n如果下载没有开始：\n• iOS：请用 Safari 浏览器打开\n• App 内浏览器：请点右上角「在浏览器中打开」\n• 或将 JSON 内容复制备份';
+
+                        if (!confirm(mobileMsg + '\n\n' + (currentLang === 'zh-tw' ? '是否顯示 JSON 內容以便複製？' : '是否显示 JSON 内容以便复制？'))) {
+                            return;
+                        }
+
+                        // 顯示 JSON 內容供複製
+                        showJSONContent(jsonString);
+                    } else {
+                        const successMsg = currentLang === 'zh-tw' ? 'JSON 資料已匯出！' : 'JSON 数据已导出！';
+                        alert(successMsg);
+                    }
+                }, 100);
+            } catch (error) {
+                // 下載失敗時顯示內容
+                console.error('下載失敗:', error);
+                const fallbackMsg = currentLang === 'zh-tw'
+                    ? '無法自動下載，將顯示 JSON 內容供您複製保存。'
+                    : '无法自动下载，将显示 JSON 内容供您复制保存。';
+                alert(fallbackMsg);
+                showJSONContent(jsonString);
+            }
+        }
+
+        // 顯示 JSON 內容的輔助函數
+        function showJSONContent(jsonString) {
+            const textarea = document.createElement('textarea');
+            textarea.value = jsonString;
+            textarea.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:80%;height:60%;z-index:9999;padding:20px;font-family:monospace;font-size:12px;';
+            document.body.appendChild(textarea);
+            textarea.select();
+
+            const copyMsg = currentLang === 'zh-tw'
+                ? '請複製以下內容，然後關閉此視窗。\n\n提示：可用分享功能傳送到其他 App 保存。'
+                : '请复制以下内容，然后关闭此窗口。\n\n提示：可用分享功能传送到其他 App 保存。';
+
+            if (confirm(copyMsg + '\n\n' + (currentLang === 'zh-tw' ? '點擊確定自動複製到剪貼簿' : '点击确定自动复制到剪贴板'))) {
+                try {
+                    document.execCommand('copy');
+                    alert(currentLang === 'zh-tw' ? '已複製到剪貼簿！' : '已复制到剪贴板！');
+                } catch (e) {
+                    alert(currentLang === 'zh-tw' ? '請手動複製內容' : '请手动复制内容');
+                }
+            }
+
+            setTimeout(() => document.body.removeChild(textarea), 30000); // 30秒後自動移除
         }
 
         function importJSON() {
