@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>https://purpleform.github.io/bdsm-checklist/bdsm-checklist.html v1.7 (緊湊版)</title>
+    <title>BDSM項目喜好紫評表 v1.7</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
@@ -300,6 +300,69 @@
             flex-wrap: wrap;
         }
 
+        .user-info {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        .user-info-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .user-info-item label {
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .user-info-item input {
+            padding: 6px 12px;
+            border: 2px solid white;
+            border-radius: 6px;
+            background: white;
+            color: #667eea;
+            font-size: 14px;
+            font-weight: bold;
+            outline: none;
+            transition: all 0.3s;
+            min-width: 120px;
+        }
+
+        .user-info-item input:focus {
+            border-color: #764ba2;
+            box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.1);
+        }
+
+        /* 匯出時顯示的使用者資訊 */
+        .user-display {
+            display: none;
+            text-align: center;
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .compact-mode .user-display {
+            display: block;
+        }
+
+        .compact-mode .user-info {
+            display: none;
+        }
+
         .lang-toggle {
             background: white;
             border: 2px solid white;
@@ -531,6 +594,17 @@
                 <h1 data-zh-tw="BDSM項目喜好紫評表 v1.7" data-zh-cn="BDSM项目喜好紫评表 v1.7">BDSM項目喜好紫評表 v1.7</h1>
                 <button class="lang-toggle" onclick="toggleLanguage()">简体中文</button>
             </div>
+            <div class="user-info">
+                <div class="user-info-item">
+                    <label data-zh-tw="請輸入您的暱稱：" data-zh-cn="请输入您的昵称：">請輸入您的暱稱：</label>
+                    <input type="text" id="userNickname">
+                </div>
+                <div class="user-info-item">
+                    <label data-zh-tw="請輸入您的屬性：" data-zh-cn="请输入您的属性：">請輸入您的屬性：</label>
+                    <input type="text" id="userRole">
+                </div>
+            </div>
+            <div class="user-display" id="userDisplay"></div>
             <div class="legend">
                 <div class="legend-item" data-zh-tw="4 - 最喜歡" data-zh-cn="4 - 最喜欢">4 - 最喜歡</div>
                 <div class="legend-item" data-zh-tw="3 - 喜歡" data-zh-cn="3 - 喜欢">3 - 喜歡</div>
@@ -910,6 +984,33 @@
             });
         }
 
+        // 更新使用者資訊顯示
+        function updateUserDisplay() {
+            const nickname = document.getElementById('userNickname').value.trim();
+            const role = document.getElementById('userRole').value.trim();
+            const displayDiv = document.getElementById('userDisplay');
+
+            const nicknameLabel = currentLang === 'zh-tw' ? '暱稱' : '昵称';
+            const roleLabel = currentLang === 'zh-tw' ? '屬性' : '属性';
+            const secretText = currentLang === 'zh-tw' ? '秘密～' : '秘密～';
+
+            const displayNickname = nickname || secretText;
+            const displayRole = role || secretText;
+
+            const displayText = `${nicknameLabel}：${displayNickname}　｜　${roleLabel}：${displayRole}`;
+            displayDiv.textContent = displayText;
+        }
+
+        function updatePageTitle() {
+            if (currentLang === 'zh-tw') {
+                document.title = 'BDSM項目喜好紫評表 v1.7';
+                document.documentElement.lang = 'zh-TW';
+            } else {
+                document.title = 'BDSM项目喜好紫评表 v1.7';
+                document.documentElement.lang = 'zh-CN';
+            }
+        }
+
         function toggleLanguage() {
             const langButton = document.querySelector('.lang-toggle');
 
@@ -920,6 +1021,9 @@
                 currentLang = 'zh-tw';
                 langButton.textContent = '简体中文';
             }
+
+            // 更新網頁標題
+            updatePageTitle();
 
             // 更新所有帶有語言屬性的元素
             document.querySelectorAll('[data-zh-tw]').forEach(element => {
@@ -934,6 +1038,9 @@
         }
 
         async function exportPDF() {
+            // 更新使用者資訊顯示
+            updateUserDisplay();
+
             // 檢查是否所有項目都已填寫
             const allItems = document.querySelectorAll('.item');
             const unfilledItems = [];
@@ -1079,8 +1186,9 @@
                 const filename = currentLang === 'zh-tw' ? 'BDSM項目喜好紫評表.pdf' : 'BDSM项目喜好紫评表.pdf';
                 const pdfBlob = pdf.output('blob');
 
-                // 優先使用 Web Share API
-                if (navigator.share && navigator.canShare) {
+                // 優先使用 Web Share API（僅限移動裝置）
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                if (isMobile && navigator.share && navigator.canShare) {
                     try {
                         const file = new File([pdfBlob], filename, { type: 'application/pdf' });
 
@@ -1152,6 +1260,9 @@
         }
 
         async function exportScreenshot() {
+            // 更新使用者資訊顯示
+            updateUserDisplay();
+
             // 檢查是否所有項目都已填寫
             const allItems = document.querySelectorAll('.item');
             const unfilledItems = [];
@@ -1246,8 +1357,9 @@
                 canvas.toBlob(async (blob) => {
                     const filename = currentLang === 'zh-tw' ? 'BDSM喜好紫評表.png' : 'BDSM喜好紫评表.png';
 
-                    // 優先使用 Web Share API
-                    if (navigator.share && navigator.canShare) {
+                    // 優先使用 Web Share API（僅限移動裝置）
+                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                    if (isMobile && navigator.share && navigator.canShare) {
                         try {
                             const file = new File([blob], filename, { type: 'image/png' });
 
@@ -1350,6 +1462,10 @@
                 version: "1.7",
                 language: currentLang,
                 exportDate: new Date().toISOString(),
+                userInfo: {
+                    nickname: document.getElementById('userNickname').value.trim(),
+                    role: document.getElementById('userRole').value.trim()
+                },
                 ratings: ratings
             };
 
@@ -1358,8 +1474,9 @@
             const filename = currentLang === 'zh-tw' ? 'BDSM紫評表資料.json' : 'BDSM紫评表数据.json';
             const blob = new Blob([jsonString], { type: 'application/json' });
 
-            // 優先使用 Web Share API
-            if (navigator.share && navigator.canShare) {
+            // 優先使用 Web Share API（僅限移動裝置）
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            if (isMobile && navigator.share && navigator.canShare) {
                 try {
                     const file = new File([blob], filename, { type: 'application/json' });
 
@@ -1506,6 +1623,16 @@
                         }
                     }
 
+                    // 匯入使用者資訊
+                    if (jsonData.userInfo) {
+                        if (jsonData.userInfo.nickname) {
+                            document.getElementById('userNickname').value = jsonData.userInfo.nickname;
+                        }
+                        if (jsonData.userInfo.role) {
+                            document.getElementById('userRole').value = jsonData.userInfo.role;
+                        }
+                    }
+
                     // 匯入資料
                     let importedCount = 0;
                     Object.keys(jsonData.ratings).forEach(categoryId => {
@@ -1524,9 +1651,16 @@
                         }
                     });
 
-                    const successMsg = currentLang === 'zh-tw'
-                        ? `成功匯入 ${importedCount} 個評分！`
-                        : `成功导入 ${importedCount} 个评分！`;
+                    let successMsg = currentLang === 'zh-tw'
+                        ? `成功匯入 ${importedCount} 個評分`
+                        : `成功导入 ${importedCount} 个评分`;
+
+                    if (jsonData.userInfo && (jsonData.userInfo.nickname || jsonData.userInfo.role)) {
+                        successMsg += currentLang === 'zh-tw' ? '及使用者資訊！' : '及用户信息！';
+                    } else {
+                        successMsg += '！';
+                    }
+
                     alert(successMsg);
 
                 } catch (error) {
@@ -1556,6 +1690,7 @@
         // 頁面載入時初始化
         window.addEventListener('DOMContentLoaded', function() {
             checkBrowserCompatibility();  // 檢查瀏覽器相容性
+            updatePageTitle();  // 初始化網頁標題
             initializeItems();
             generateWatermarks();
         });
