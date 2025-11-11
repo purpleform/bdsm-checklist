@@ -1027,11 +1027,32 @@
                 pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
 
                 const filename = currentLang === 'zh-tw' ? 'BDSM項目喜好紫評表.pdf' : 'BDSM项目喜好紫评表.pdf';
-
-                // 使用 Blob URL 和 <a> 標籤下載，相容所有瀏覽器包括 iOS Safari
                 const pdfBlob = pdf.output('blob');
-                const blobUrl = URL.createObjectURL(pdfBlob);
 
+                // 優先使用 Web Share API
+                if (navigator.share && navigator.canShare) {
+                    try {
+                        const file = new File([pdfBlob], filename, { type: 'application/pdf' });
+
+                        if (navigator.canShare({ files: [file] })) {
+                            await navigator.share({
+                                files: [file],
+                                title: currentLang === 'zh-tw' ? 'BDSM 紫評表' : 'BDSM 紫评表'
+                            });
+                            console.log('PDF shared successfully');
+                            return;
+                        }
+                    } catch (error) {
+                        console.log('Web Share API failed, fallback to download:', error);
+                        // 如果使用者取消分享，不顯示錯誤，直接降級到下載
+                        if (error.name === 'AbortError') {
+                            return;
+                        }
+                    }
+                }
+
+                // 降級方案：傳統下載
+                const blobUrl = URL.createObjectURL(pdfBlob);
                 const link = document.createElement('a');
                 link.href = blobUrl;
                 link.download = filename;
@@ -1040,8 +1061,20 @@
                 link.click();
                 document.body.removeChild(link);
 
-                // 延遲釋放 URL 避免下載失敗
-                setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+                setTimeout(() => {
+                    URL.revokeObjectURL(blobUrl);
+
+                    // 移動裝置額外提示
+                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                    if (isMobile) {
+                        setTimeout(() => {
+                            const mobileMsg = currentLang === 'zh-tw'
+                                ? 'PDF 已產生！\n\n如果下載沒有開始：\n• 請用 Safari（iOS）或 Chrome（Android）開啟\n• 從 App 內瀏覽器點選「在瀏覽器中開啟」'
+                                : 'PDF 已生成！\n\n如果下载没有开始：\n• 请用 Safari（iOS）或 Chrome（Android）打开\n• 从 App 内浏览器点选「在浏览器中打开」';
+                            alert(mobileMsg);
+                        }, 500);
+                    }
+                }, 100);
 
                 console.log('PDF export completed');
             } catch (error) {
@@ -1162,18 +1195,55 @@
                 console.log('PNG Canvas size:', canvas.width, 'x', canvas.height);
 
                 // 將 canvas 轉換為圖片並下載
-                canvas.toBlob(blob => {
+                canvas.toBlob(async (blob) => {
+                    const filename = currentLang === 'zh-tw' ? 'BDSM喜好紫評表.png' : 'BDSM喜好紫评表.png';
+
+                    // 優先使用 Web Share API
+                    if (navigator.share && navigator.canShare) {
+                        try {
+                            const file = new File([blob], filename, { type: 'image/png' });
+
+                            if (navigator.canShare({ files: [file] })) {
+                                await navigator.share({
+                                    files: [file],
+                                    title: currentLang === 'zh-tw' ? 'BDSM 紫評表' : 'BDSM 紫评表'
+                                });
+                                console.log('PNG shared successfully');
+                                return;
+                            }
+                        } catch (error) {
+                            console.log('Web Share API failed, fallback to download:', error);
+                            // 如果使用者取消分享，不顯示錯誤
+                            if (error.name === 'AbortError') {
+                                return;
+                            }
+                        }
+                    }
+
+                    // 降級方案：傳統下載
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement('a');
                     link.href = url;
-                    const filename = currentLang === 'zh-tw' ? 'BDSM喜好紫評表.png' : 'BDSM喜好紫评表.png';
                     link.download = filename;
                     link.style.display = 'none';
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
 
-                    setTimeout(() => URL.revokeObjectURL(url), 100);
+                    setTimeout(() => {
+                        URL.revokeObjectURL(url);
+
+                        // 移動裝置額外提示
+                        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                        if (isMobile) {
+                            setTimeout(() => {
+                                const mobileMsg = currentLang === 'zh-tw'
+                                    ? '截圖已產生！\n\n如果下載沒有開始：\n• 請用 Safari（iOS）或 Chrome（Android）開啟\n• 從 App 內瀏覽器點選「在瀏覽器中開啟」'
+                                    : '截图已生成！\n\n如果下载没有开始：\n• 请用 Safari（iOS）或 Chrome（Android）打开\n• 从 App 内浏览器点选「在浏览器中打开」';
+                                alert(mobileMsg);
+                            }, 500);
+                        }
+                    }, 100);
                 }, 'image/png', 1.0);
 
                 console.log('PNG export completed');
@@ -1203,7 +1273,7 @@
             }
         }
 
-        function exportJSON() {
+        async function exportJSON() {
             const ratings = {};
             const currentItems = items[currentLang];
 
@@ -1237,17 +1307,35 @@
                 ratings: ratings
             };
 
-            // 下載 JSON 檔案（跨平台相容版本）
+            // 下載 JSON 檔案（優先使用 Web Share API）
             const jsonString = JSON.stringify(jsonData, null, 2);
             const filename = currentLang === 'zh-tw' ? 'BDSM紫評表資料.json' : 'BDSM紫评表数据.json';
+            const blob = new Blob([jsonString], { type: 'application/json' });
 
-            // 檢測是否為 iOS/移動裝置
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            // 優先使用 Web Share API
+            if (navigator.share && navigator.canShare) {
+                try {
+                    const file = new File([blob], filename, { type: 'application/json' });
 
-            // 嘗試使用標準下載方式
+                    if (navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: currentLang === 'zh-tw' ? 'BDSM 紫評表資料' : 'BDSM 紫评表数据'
+                        });
+                        console.log('JSON shared successfully');
+                        return;
+                    }
+                } catch (error) {
+                    console.log('Web Share API failed, fallback to download:', error);
+                    // 如果使用者取消分享，不顯示錯誤
+                    if (error.name === 'AbortError') {
+                        return;
+                    }
+                }
+            }
+
+            // 降級方案：傳統下載
             try {
-                const blob = new Blob([jsonString], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
@@ -1257,22 +1345,21 @@
                 link.click();
                 document.body.removeChild(link);
 
-                // 延遲檢查下載是否成功
                 setTimeout(() => {
                     URL.revokeObjectURL(url);
 
-                    // 如果是移動裝置，給予額外提示
+                    // 移動裝置額外提示
+                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                     if (isMobile) {
-                        const mobileMsg = currentLang === 'zh-tw'
-                            ? 'JSON 已匯出！\n\n如果下載沒有開始：\n• iOS：請用 Safari 瀏覽器開啟\n• App 內瀏覽器：請點右上角「在瀏覽器中開啟」\n• 或將 JSON 內容複製備份'
-                            : 'JSON 已导出！\n\n如果下载没有开始：\n• iOS：请用 Safari 浏览器打开\n• App 内浏览器：请点右上角「在浏览器中打开」\n• 或将 JSON 内容复制备份';
+                        setTimeout(() => {
+                            const mobileMsg = currentLang === 'zh-tw'
+                                ? 'JSON 已產生！\n\n如果下載沒有開始：\n• 請用 Safari（iOS）或 Chrome（Android）開啟\n• 從 App 內瀏覽器點選「在瀏覽器中開啟」'
+                                : 'JSON 已生成！\n\n如果下载没有开始：\n• 请用 Safari（iOS）或 Chrome（Android）打开\n• 从 App 内浏览器点选「在浏览器中打开」';
 
-                        if (!confirm(mobileMsg + '\n\n' + (currentLang === 'zh-tw' ? '是否顯示 JSON 內容以便複製？' : '是否显示 JSON 内容以便复制？'))) {
-                            return;
-                        }
-
-                        // 顯示 JSON 內容供複製
-                        showJSONContent(jsonString);
+                            if (confirm(mobileMsg + '\n\n' + (currentLang === 'zh-tw' ? '是否顯示 JSON 內容以便複製？' : '是否显示 JSON 内容以便复制？'))) {
+                                showJSONContent(jsonString);
+                            }
+                        }, 500);
                     } else {
                         const successMsg = currentLang === 'zh-tw' ? 'JSON 資料已匯出！' : 'JSON 数据已导出！';
                         alert(successMsg);
@@ -1293,24 +1380,28 @@
         function showJSONContent(jsonString) {
             const textarea = document.createElement('textarea');
             textarea.value = jsonString;
-            textarea.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:80%;height:60%;z-index:9999;padding:20px;font-family:monospace;font-size:12px;';
+            textarea.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:80%;height:60%;z-index:9999;padding:20px;font-family:monospace;font-size:12px;border:2px solid #667eea;border-radius:8px;';
             document.body.appendChild(textarea);
             textarea.select();
 
             const copyMsg = currentLang === 'zh-tw'
-                ? '請複製以下內容，然後關閉此視窗。\n\n提示：可用分享功能傳送到其他 App 保存。'
-                : '请复制以下内容，然后关闭此窗口。\n\n提示：可用分享功能传送到其他 App 保存。';
+                ? '請複製以下內容保存。\n\n提示：可用分享功能傳到備忘錄或雲端。'
+                : '请复制以下内容保存。\n\n提示：可用分享功能传到备忘录或云端。';
 
             if (confirm(copyMsg + '\n\n' + (currentLang === 'zh-tw' ? '點擊確定自動複製到剪貼簿' : '点击确定自动复制到剪贴板'))) {
                 try {
                     document.execCommand('copy');
                     alert(currentLang === 'zh-tw' ? '已複製到剪貼簿！' : '已复制到剪贴板！');
                 } catch (e) {
-                    alert(currentLang === 'zh-tw' ? '請手動複製內容' : '请手动复制内容');
+                    alert(currentLang === 'zh-tw' ? '請手動選取並複製內容' : '请手动选取并复制内容');
                 }
             }
 
-            setTimeout(() => document.body.removeChild(textarea), 30000); // 30秒後自動移除
+            setTimeout(() => {
+                if (document.body.contains(textarea)) {
+                    document.body.removeChild(textarea);
+                }
+            }, 30000); // 30秒後自動移除
         }
 
         function importJSON() {
