@@ -216,10 +216,18 @@
             margin-top: 30px;
             text-align: center;
             display: flex;
+            flex-direction: column;
             gap: 15px;
-            justify-content: center;
+            align-items: center;
             position: relative;
             z-index: 2;
+        }
+
+        .action-row {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            width: 100%;
         }
 
         button {
@@ -592,10 +600,17 @@
         </div>
 
         <div class="actions">
-            <button class="export-btn" onclick="exportPDF()" data-zh-tw="匯出PDF" data-zh-cn="导出PDF">匯出PDF</button>
-            <button class="export-btn" onclick="exportScreenshot()" data-zh-tw="匯出截圖" data-zh-cn="导出截图">匯出截圖</button>
-            <button class="reset-btn" onclick="resetAll()" data-zh-tw="重置所有" data-zh-cn="重置所有">重置所有</button>
+            <div class="action-row">
+                <button class="export-btn" onclick="exportPDF()" data-zh-tw="匯出PDF" data-zh-cn="导出PDF">匯出PDF</button>
+                <button class="export-btn" onclick="exportScreenshot()" data-zh-tw="匯出截圖" data-zh-cn="导出截图">匯出截圖</button>
+                <button class="reset-btn" onclick="resetAll()" data-zh-tw="重置所有" data-zh-cn="重置所有">重置所有</button>
+            </div>
+            <div class="action-row">
+                <button class="export-btn" onclick="exportJSON()" data-zh-tw="匯出JSON" data-zh-cn="导出JSON">匯出JSON</button>
+                <button class="export-btn" onclick="importJSON()" data-zh-tw="匯入JSON" data-zh-cn="导入JSON">匯入JSON</button>
+            </div>
         </div>
+        <input type="file" id="jsonFileInput" accept=".json" style="display: none;" onchange="handleJSONFile(event)">
 
         <div class="footer">
             <p data-zh-tw="此表格由《簡稱樂園》BDSM群內成員合作協力製作而成的不完全項目總匯，刻意避開了一些涉及傷害自己或他人的性偏離項目。" data-zh-cn="此表格由《简称乐园》BDSM群内成员合作协力制作而成的不完全项目总汇，刻意避开了一些涉及伤害自己或他人的性偏离项目。">此表格由《簡稱樂園》BDSM群內成員合作協力製作而成的不完全項目總匯，刻意避開了一些涉及傷害自己或他人的性偏離項目。</p>
@@ -1035,8 +1050,11 @@
                 contentDiv.style.display = '';
                 contentDiv.style.gridTemplateColumns = '';
                 contentDiv.style.gap = originalStyles.contentGap;
-                actionsDiv.style.display = 'flex';
+                actionsDiv.style.display = '';
                 langToggle.style.display = 'block';
+
+                // 強制瀏覽器重新渲染，確保 compact-mode 的樣式完全移除
+                void container.offsetHeight;
             }
         }
 
@@ -1165,9 +1183,160 @@
                 contentDiv.style.display = '';
                 contentDiv.style.gridTemplateColumns = '';
                 contentDiv.style.gap = originalStyles.contentGap;
-                actionsDiv.style.display = 'flex';
+                actionsDiv.style.display = '';
                 langToggle.style.display = 'block';
+
+                // 強制瀏覽器重新渲染，確保 compact-mode 的樣式完全移除
+                void container.offsetHeight;
             }
+        }
+
+        function exportJSON() {
+            const ratings = {};
+            const currentItems = items[currentLang];
+
+            // 遍歷所有分類
+            Object.keys(currentItems).forEach(categoryId => {
+                const categoryRatings = [];
+                const itemCount = currentItems[categoryId].length;
+
+                // 遍歷該分類的所有項目
+                for (let i = 0; i < itemCount; i++) {
+                    const radios = document.querySelectorAll(`input[name="${categoryId}-${i}"]`);
+                    let selectedValue = null;
+
+                    radios.forEach(radio => {
+                        if (radio.checked) {
+                            selectedValue = parseInt(radio.value);
+                        }
+                    });
+
+                    categoryRatings.push(selectedValue);
+                }
+
+                ratings[categoryId] = categoryRatings;
+            });
+
+            // 建立 JSON 資料
+            const jsonData = {
+                version: "1.7",
+                language: currentLang,
+                exportDate: new Date().toISOString(),
+                ratings: ratings
+            };
+
+            // 下載 JSON 檔案
+            const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            const filename = currentLang === 'zh-tw' ? 'BDSM紫評表資料.json' : 'BDSM紫评表数据.json';
+            link.download = filename;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(url), 100);
+
+            const successMsg = currentLang === 'zh-tw' ? 'JSON 資料已匯出！' : 'JSON 数据已导出！';
+            alert(successMsg);
+        }
+
+        function importJSON() {
+            // 觸發隱藏的檔案選擇器
+            document.getElementById('jsonFileInput').click();
+        }
+
+        function handleJSONFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const jsonData = JSON.parse(e.target.result);
+
+                    // 檢查版本
+                    if (!jsonData.version || jsonData.version !== "1.7") {
+                        const versionWarning = currentLang === 'zh-tw'
+                            ? `警告：此 JSON 檔案的版本 (${jsonData.version || '未知'}) 可能與目前版本 (1.7) 不相容。\n\n是否繼續匯入？`
+                            : `警告：此 JSON 文件的版本 (${jsonData.version || '未知'}) 可能与当前版本 (1.7) 不兼容。\n\n是否继续导入？`;
+
+                        if (!confirm(versionWarning)) {
+                            event.target.value = ''; // 清空檔案選擇
+                            return;
+                        }
+                    }
+
+                    // 檢查資料格式
+                    if (!jsonData.ratings) {
+                        throw new Error('Invalid JSON format: missing ratings data');
+                    }
+
+                    const currentItems = items[currentLang];
+                    let incompatibleCategories = [];
+
+                    // 檢查陣列長度是否相容
+                    Object.keys(jsonData.ratings).forEach(categoryId => {
+                        if (currentItems[categoryId]) {
+                            const expectedLength = currentItems[categoryId].length;
+                            const actualLength = jsonData.ratings[categoryId].length;
+
+                            if (expectedLength !== actualLength) {
+                                incompatibleCategories.push(
+                                    `${categoryId}: ${currentLang === 'zh-tw' ? '預期' : '预期'} ${expectedLength} ${currentLang === 'zh-tw' ? '項，實際' : '项，实际'} ${actualLength} ${currentLang === 'zh-tw' ? '項' : '项'}`
+                                );
+                            }
+                        }
+                    });
+
+                    if (incompatibleCategories.length > 0) {
+                        const incompatibleMsg = currentLang === 'zh-tw'
+                            ? `警告：以下分類的項目數量不相容：\n\n${incompatibleCategories.join('\n')}\n\n這可能會導致評分對應錯誤。是否繼續匯入？`
+                            : `警告：以下分类的项目数量不兼容：\n\n${incompatibleCategories.join('\n')}\n\n这可能会导致评分对应错误。是否继续导入？`;
+
+                        if (!confirm(incompatibleMsg)) {
+                            event.target.value = '';
+                            return;
+                        }
+                    }
+
+                    // 匯入資料
+                    let importedCount = 0;
+                    Object.keys(jsonData.ratings).forEach(categoryId => {
+                        if (currentItems[categoryId]) {
+                            const categoryRatings = jsonData.ratings[categoryId];
+
+                            categoryRatings.forEach((rating, index) => {
+                                if (rating !== null && index < currentItems[categoryId].length) {
+                                    const radio = document.querySelector(`input[name="${categoryId}-${index}"][value="${rating}"]`);
+                                    if (radio) {
+                                        radio.checked = true;
+                                        importedCount++;
+                                    }
+                                }
+                            });
+                        }
+                    });
+
+                    const successMsg = currentLang === 'zh-tw'
+                        ? `成功匯入 ${importedCount} 個評分！`
+                        : `成功导入 ${importedCount} 个评分！`;
+                    alert(successMsg);
+
+                } catch (error) {
+                    console.error('JSON 匯入錯誤:', error);
+                    const errorMsg = currentLang === 'zh-tw'
+                        ? `JSON 匯入失敗：${error.message}`
+                        : `JSON 导入失败：${error.message}`;
+                    alert(errorMsg);
+                }
+
+                // 清空檔案選擇，允許重複匯入同一檔案
+                event.target.value = '';
+            };
+
+            reader.readAsText(file);
         }
 
         function resetAll() {
